@@ -1,0 +1,96 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import SemesterCalculator from './SemesterCalculator';
+import OverallCalculator from './OverallCalculator';
+import { Save, LayoutDashboard, History } from 'lucide-react';
+import './Dashboard.css';
+
+export default function Dashboard() {
+  const { currentUser, logout, userData, saveUserData, isLoading } = useAuth();
+  const [activeTab, setActiveTab] = useState('semester'); // 'semester' or 'overall'
+  
+  // Local state to hold the current values of calculators before saving
+  const [semesterData, setSemesterData] = useState(null);
+  const [overallData, setOverallData] = useState(null);
+  const [saveStatus, setSaveStatus] = useState('');
+
+  // Load user data on mount
+  useEffect(() => {
+    if (userData) {
+      if (userData.semester) setSemesterData(userData.semester);
+      if (userData.overall) setOverallData(userData.overall);
+    }
+  }, [userData]);
+
+  if (isLoading) {
+    return (
+      <div className="dashboard-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+        <h2 className="smooth-gradient-text animate-pulse">Syncing Cloud Database...</h2>
+      </div>
+    );
+  }
+
+  const handleSave = async () => {
+    const dataToSave = {
+      semester: semesterData,
+      overall: overallData
+    };
+    
+    setSaveStatus('Saving...');
+    try {
+      await saveUserData(dataToSave);
+      setSaveStatus('✓ Saved!');
+    } catch (err) {
+      setSaveStatus('Save failed!');
+    }
+    setTimeout(() => setSaveStatus(''), 2000);
+  };
+
+  return (
+    <div className="dashboard-container">
+      <div className="dashboard-subnav">
+        <div className="nav-tabs">
+          <button 
+            className={`nav-tab ${activeTab === 'semester' ? 'active' : ''}`}
+            onClick={() => setActiveTab('semester')}
+          >
+            <LayoutDashboard size={18} />
+            Semester CGPA
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'overall' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overall')}
+          >
+            <History size={18} />
+            Overall CGPA
+          </button>
+        </div>
+
+        <div className="nav-actions">
+          <button className="btn-primary btn-save" onClick={handleSave}>
+            <Save size={16} />
+            {saveStatus || 'Save Data to Cloud'}
+          </button>
+        </div>
+      </div>
+
+      <main className="dashboard-content">
+        <div className="tab-content animate-fade-in">
+          {activeTab === 'semester' ? (
+            <SemesterCalculator 
+              key={userData ? 'loaded' : 'default'}
+              initialData={userData?.semester} 
+              onChange={setSemesterData} 
+            />
+          ) : (
+            <OverallCalculator 
+              key={userData ? 'loaded' : 'default'}
+              initialData={userData?.overall} 
+              onChange={setOverallData} 
+            />
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

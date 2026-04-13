@@ -33,8 +33,8 @@ const parseHeuristic = (rawText) => {
   // Basic Regex for Subject code: 3-4 letters, 3-4 digits, optional 1 letter
   const courseCodeRegex = /[A-Z]{3,4}\s?\d{3,4}[A-Z]?/;
   
-  // Valid credits format in screenshots (usually ends in .0 or .5 or single digits)
-  const validCredits = ["1.0", "1.5", "2.0", "3.0", "4.0", "5.0", "6.0", "20.0", "1", "2", "3", "4", "5", "6", "9", "20"];
+  // Valid credits format in screenshots (Only decimals to aggressively prevent grabbing Row Numbers like '5', '6' from the far left column)
+  const validCredits = ["1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0", "6.0", "9.0", "20.0"];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -43,25 +43,28 @@ const parseHeuristic = (rawText) => {
     // Attempt to identify a subject Name row
     if (matchPos !== -1) {
       
-      let textFromCode = line.substring(matchPos);
+      const codeMatch = line.match(courseCodeRegex);
+      const code = codeMatch ? codeMatch[0] : "";
       
-      // Stop the name explicitly when encountering any weird symbols like |, ~, (, or standalone numbers which means the name ended
+      // Start capturing the name explicitly AFTER the course code so we don't accidentally truncate ourselves!
+      let textFromCode = line.substring(matchPos + code.length).trim();
+      
+      if (textFromCode.startsWith('-')) {
+        textFromCode = textFromCode.substring(1).trim();
+      }
+      
+      // Stop the name explicitly when encountering course metadata columns (numbers, structural keywords)
       let cleanName = textFromCode;
-      const stopMatch = textFromCode.match(/(\(|~|\||\d{2,}| Discipline | Foundation )/);
+      const stopMatch = textFromCode.match(/(\(|~|\||\d| Discipline | Foundation | Core | Regular | Engineering )/i);
       if (stopMatch) {
         cleanName = textFromCode.substring(0, stopMatch.index).trim();
       } else {
-        // Just general cleanup if no weird characters exist
         cleanName = cleanName.trim();
       }
 
       // Check if it's a lab (P at the end of code, or contains Lab/Practice)
-      const codeMatch = textFromCode.match(courseCodeRegex);
-      const code = codeMatch ? codeMatch[0] : "";
-      const isLab = cleanName.toLowerCase().includes('lab') || cleanName.toLowerCase().includes('practice') || code.endsWith('P') || code.endsWith('L') === false && code.match(/[A-Z]+[0-9]+[PL]/);
+      const isLab = cleanName.toLowerCase().includes('lab') || cleanName.toLowerCase().includes('practice') || code.endsWith('P') || (code.endsWith('L') === false && code.match(/[A-Z]+[0-9]+[PL]/));
       
-      // For Credits constraint: "lowest no is credits of subect".
-      // We will blindly sweep the next 6 lines. Whatever numeric valid point is located at the lowest vertical spot BEFORE hitting the next code is the Credit!
       let creditValue = 3; // Default fallback
       let lastFoundCredit = null;
 

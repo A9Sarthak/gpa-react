@@ -2,11 +2,23 @@ import React, { useState } from 'react';
 import { Target, AlertCircle, CheckCircle2 } from 'lucide-react';
 import './Calculator.css';
 
-export default function TargetCalculator() {
-  const [currentCredits, setCurrentCredits] = useState('');
-  const [currentCGPA, setCurrentCGPA] = useState('');
-  const [targetCGPA, setTargetCGPA] = useState('');
-  const [nextSemCredits, setNextSemCredits] = useState('');
+export default function TargetCalculator({ initialData, onChange }) {
+  const [currentCredits, setCurrentCredits] = useState(initialData?.currentCredits || '');
+  const [currentCGPA, setCurrentCGPA] = useState(initialData?.currentCGPA || '');
+  const [targetCGPA, setTargetCGPA] = useState(initialData?.targetCGPA || '');
+  const [nextSemCredits, setNextSemCredits] = useState(initialData?.nextSemCredits || '');
+
+  React.useEffect(() => {
+    if (onChange) {
+      onChange({
+        currentCredits,
+        currentCGPA,
+        targetCGPA,
+        nextSemCredits
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCredits, currentCGPA, targetCGPA, nextSemCredits]);
 
   const calculateRequiredGPA = () => {
     if (!currentCredits || !currentCGPA || !targetCGPA || !nextSemCredits) return null;

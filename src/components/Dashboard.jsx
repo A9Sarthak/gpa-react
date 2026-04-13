@@ -13,6 +13,7 @@ export default function Dashboard() {
   // Local state to hold the current values of calculators before saving
   const [semesterData, setSemesterData] = useState(null);
   const [overallData, setOverallData] = useState(null);
+  const [targetData, setTargetData] = useState(null);
   const [saveStatus, setSaveStatus] = useState('');
 
   // Load user data on mount
@@ -20,6 +21,7 @@ export default function Dashboard() {
     if (userData) {
       if (userData.semester) setSemesterData(userData.semester);
       if (userData.overall) setOverallData(userData.overall);
+      if (userData.target) setTargetData(userData.target);
     }
   }, [userData]);
 
@@ -34,7 +36,8 @@ export default function Dashboard() {
   const handleSave = async () => {
     const dataToSave = {
       semester: semesterData,
-      overall: overallData
+      overall: overallData,
+      target: targetData
     };
     
     setSaveStatus('Saving...');
@@ -120,7 +123,11 @@ export default function Dashboard() {
             />
           )}
           {activeTab === 'target' && (
-            <TargetCalculator />
+            <TargetCalculator 
+              key={userData ? 'loaded' : 'default'}
+              initialData={targetData || userData?.target} 
+              onChange={setTargetData} 
+            />
           )}
         </div>
       </main>

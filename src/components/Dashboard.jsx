@@ -47,6 +47,26 @@ export default function Dashboard() {
     setTimeout(() => setSaveStatus(''), 2000);
   };
 
+  const handleAddToCGPA = (credits, gpa) => {
+    if (!credits || credits <= 0) return;
+    
+    const currentSems = overallData?.semesters || (userData?.overall?.semesters || []);
+    const newSem = {
+      id: crypto.randomUUID(),
+      name: `Added Sem ${currentSems.length + 1}`,
+      credits: credits,
+      gpa: gpa
+    };
+    
+    setOverallData({
+      ...overallData,
+      semesters: [...currentSems, newSem]
+    });
+    
+    // Switch to the overall tab to show the newly added semester!
+    setActiveTab('overall');
+  };
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-subnav">
@@ -87,14 +107,15 @@ export default function Dashboard() {
           {activeTab === 'semester' && (
             <SemesterCalculator 
               key={userData ? 'loaded' : 'default'}
-              initialData={userData?.semester} 
+              initialData={semesterData || userData?.semester} 
               onChange={setSemesterData} 
+              onAddToCGPA={handleAddToCGPA}
             />
           )}
           {activeTab === 'overall' && (
             <OverallCalculator 
               key={userData ? 'loaded' : 'default'}
-              initialData={userData?.overall} 
+              initialData={overallData || userData?.overall} 
               onChange={setOverallData} 
             />
           )}

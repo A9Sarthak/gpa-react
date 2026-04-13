@@ -17,7 +17,7 @@ const GRADE_POINTS = {
 const DEFAULT_THEORY = Array.from({ length: 5 }, () => ({ id: crypto.randomUUID(), name: '', credits: 3, grade: 'S' }));
 const DEFAULT_LAB = Array.from({ length: 3 }, () => ({ id: crypto.randomUUID(), name: '', credits: 1, grade: 'S' }));
 
-export default function SemesterCalculator({ initialData, onChange }) {
+export default function SemesterCalculator({ initialData, onChange, onAddToCGPA }) {
   const [theorySubjects, setTheorySubjects] = useState(initialData?.theory || DEFAULT_THEORY);
   const [labSubjects, setLabSubjects] = useState(initialData?.lab || DEFAULT_LAB);
 
@@ -157,7 +157,18 @@ export default function SemesterCalculator({ initialData, onChange }) {
           <div className="cgpa-value" style={{ fontSize: '56px', fontWeight: '800', lineHeight: 1, color: 'var(--text-main)' }}>{currentCredits}</div>
         </div>
 
-        <FileOutput size={64} className="display-icon" style={{ opacity: 0.1, marginLeft: 'auto' }} />
+        <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px', zIndex: 10 }}>
+          <FileOutput size={48} className="display-icon" style={{ opacity: 0.1, position: 'absolute', right: '40px' }} />
+          {onAddToCGPA && (
+            <button 
+              className="btn-primary" 
+              style={{ fontSize: '14px', padding: '10px 20px' }}
+              onClick={() => onAddToCGPA(currentCredits, currentCgpa)}
+            >
+              <Plus size={16} /> Add to CGPA
+            </button>
+          )}
+        </div>
       </div>
 
       {renderSubjectTable('theory', theorySubjects)}

@@ -9,11 +9,7 @@ export default function Navbar({ currentView, setView }) {
   const { theme, toggleTheme } = useTheme();
 
   const handleLogoClick = () => {
-    if (currentUser) {
-      setView('dashboard');
-    } else {
-      setView('landing');
-    }
+    setView('landing');
   };
 
   const handleLogout = () => {

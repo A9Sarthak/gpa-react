@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import SemesterCalculator from './SemesterCalculator';
 import OverallCalculator from './OverallCalculator';
-import { Save, LayoutDashboard, History } from 'lucide-react';
+import TargetCalculator from './TargetCalculator';
+import { Save, LayoutDashboard, History, Target } from 'lucide-react';
 import './Dashboard.css';
 
 export default function Dashboard() {
   const { currentUser, logout, userData, saveUserData, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState('semester'); // 'semester' or 'overall'
+  const [activeTab, setActiveTab] = useState('semester'); // 'semester', 'overall', or 'target'
   
   // Local state to hold the current values of calculators before saving
   const [semesterData, setSemesterData] = useState(null);
@@ -55,14 +56,21 @@ export default function Dashboard() {
             onClick={() => setActiveTab('semester')}
           >
             <LayoutDashboard size={18} />
-            Semester CGPA
+            Semester GPA
           </button>
           <button 
             className={`nav-tab ${activeTab === 'overall' ? 'active' : ''}`}
             onClick={() => setActiveTab('overall')}
           >
             <History size={18} />
-            Overall CGPA
+            CGPA
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'target' ? 'active' : ''}`}
+            onClick={() => setActiveTab('target')}
+          >
+            <Target size={18} />
+            Target CGPA
           </button>
         </div>
 
@@ -76,18 +84,22 @@ export default function Dashboard() {
 
       <main className="dashboard-content">
         <div className="tab-content animate-fade-in">
-          {activeTab === 'semester' ? (
+          {activeTab === 'semester' && (
             <SemesterCalculator 
               key={userData ? 'loaded' : 'default'}
               initialData={userData?.semester} 
               onChange={setSemesterData} 
             />
-          ) : (
+          )}
+          {activeTab === 'overall' && (
             <OverallCalculator 
               key={userData ? 'loaded' : 'default'}
               initialData={userData?.overall} 
               onChange={setOverallData} 
             />
+          )}
+          {activeTab === 'target' && (
+            <TargetCalculator />
           )}
         </div>
       </main>

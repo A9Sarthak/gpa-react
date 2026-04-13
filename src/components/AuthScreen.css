@@ -4,12 +4,16 @@
   align-items: center;
   min-height: 100vh;
   padding: 20px;
+  position: relative;
+  overflow: hidden;
 }
 
 .auth-card {
   width: 100%;
-  max-width: 400px;
-  padding: 40px 32px;
+  max-width: 420px;
+  padding: 48px 40px;
+  position: relative;
+  z-index: 10;
 }
 
 .auth-header {
@@ -21,12 +25,13 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: rgba(99, 102, 241, 0.1);
-  margin-bottom: 16px;
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: var(--accent-glow);
+  margin-bottom: 20px;
+  border: 1px solid var(--border-color);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.1);
 }
 
 .text-accent {
@@ -35,12 +40,14 @@
 
 .auth-header h1 {
   font-size: 28px;
+  font-weight: 800;
   margin-bottom: 8px;
+  letter-spacing: -0.04em;
 }
 
 .subtitle {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .auth-form {
@@ -57,49 +64,85 @@
 
 .form-group label {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper .input-field {
+  padding-right: 48px; /* Leave space for the eye icon */
+}
+
+.pwd-toggle-btn {
+  position: absolute;
+  right: 14px;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pwd-toggle-btn:hover {
+  color: var(--accent-color);
 }
 
 .error-message {
   background: rgba(239, 68, 68, 0.1);
   color: var(--error);
-  padding: 12px;
-  border-radius: 8px;
+  padding: 14px;
+  border-radius: 12px;
   font-size: 14px;
   text-align: center;
   border: 1px solid rgba(239, 68, 68, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
 }
 
 .auth-submit {
   width: 100%;
-  margin-top: 8px;
+  margin-top: 12px;
+  height: 52px;
+  font-size: 16px;
 }
 
 .auth-footer {
   margin-top: 24px;
   text-align: center;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-muted);
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--card-border);
   padding-top: 24px;
 }
 
 .toggle-mode-btn {
   color: var(--accent-color);
-  font-weight: 600;
+  font-weight: 700;
   margin-left: 8px;
 }
 
 .toggle-mode-btn:hover {
-  text-decoration: underline;
+  color: var(--accent-hover);
 }
 
 .auth-divider {
   display: flex;
   align-items: center;
   text-align: center;
-  margin: 16px 0;
+  margin: 24px 0;
   color: var(--text-muted);
 }
 
@@ -107,12 +150,14 @@
 .auth-divider::after {
   content: '';
   flex: 1;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--card-border);
 }
 
 .auth-divider span {
-  padding: 0 10px;
-  font-size: 14px;
+  padding: 0 16px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .guest-btn {
@@ -121,4 +166,6 @@
   justify-content: center;
   align-items: center;
   gap: 8px;
+  height: 52px;
+  font-size: 16px;
 }

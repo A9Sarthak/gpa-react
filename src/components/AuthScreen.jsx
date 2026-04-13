@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { GraduationCap, LogIn, UserPlus, User } from 'lucide-react';
+import { GraduationCap, LogIn, UserPlus, User, Eye, EyeOff } from 'lucide-react';
 import './AuthScreen.css'; // Let's define some specific scoped CSS here or just use scoped classes
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   
   const { login, signup, loginAsGuest } = useAuth();
@@ -60,14 +61,23 @@ export default function AuthScreen() {
 
           <div className="form-group">
             <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              className="input-field"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                className="input-field"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button 
+                type="button" 
+                className="pwd-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className="btn-primary auth-submit">
@@ -77,7 +87,7 @@ export default function AuthScreen() {
         </form>
 
         <div className="auth-divider">
-          <span>or</span>
+          <span>or continue with</span>
         </div>
 
         <button 

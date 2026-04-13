@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, FileOutput } from 'lucide-react';
+import { Plus, Trash2, FileOutput, UploadCloud, Loader2 } from 'lucide-react';
+import { scanImageForSubjects } from '../utils/ocrParser';
 import './Calculator.css';
 
 // VIT Grading System
@@ -20,6 +21,45 @@ const DEFAULT_LAB = Array.from({ length: 3 }, () => ({ id: crypto.randomUUID(), 
 export default function SemesterCalculator({ initialData, onChange, onAddToCGPA }) {
   const [theorySubjects, setTheorySubjects] = useState(initialData?.theory || DEFAULT_THEORY);
   const [labSubjects, setLabSubjects] = useState(initialData?.lab || DEFAULT_LAB);
+  
+  // OCR State
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setIsScanning(true);
+      setScanProgress(0);
+      
+      const extractedSubjects = await scanImageForSubjects(file, (progress) => {
+        setScanProgress(progress);
+      });
+      
+      if (extractedSubjects.length > 0) {
+        const newTheory = extractedSubjects.filter(s => s.type === 'theory');
+        const newLabs = extractedSubjects.filter(s => s.type === 'lab');
+        
+        // Remove empty default rows if they exist untouched
+        let currentTheory = theorySubjects.length === 5 && theorySubjects[0].name === '' ? [] : theorySubjects;
+        let currentLabs = labSubjects.length === 3 && labSubjects[0].name === '' ? [] : labSubjects;
+
+        setTheorySubjects([...currentTheory, ...newTheory]);
+        setLabSubjects([...currentLabs, ...newLabs]);
+      } else {
+        alert("Could not detect any clear subjects or credits. Please ensure the screenshot contains course codes (like BITE304L) and credits clearly.");
+      }
+    } catch (err) {
+      alert("Error scanning image: " + err.message);
+    } finally {
+      setIsScanning(false);
+      setScanProgress(0);
+      // Reset input
+      e.target.value = null;
+    }
+  };
 
   const computeStats = () => {
     let totalCredits = 0;
@@ -158,6 +198,38 @@ export default function SemesterCalculator({ initialData, onChange, onAddToCGPA 
 
   return (
     <div className="calculator-container animate-fade-in">
+      <div className="dashboard-sub-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: '800' }}>Semester Configuration</h2>
+        
+        <div style={{ position: 'relative' }}>
+          <input 
+            type="file" 
+            id="ocr-upload" 
+            accept="image/*" 
+            style={{ display: 'none' }} 
+            onChange={handleImageUpload}
+            disabled={isScanning}
+          />
+          <label 
+            htmlFor="ocr-upload" 
+            className="btn-secondary" 
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: isScanning ? 'not-allowed' : 'pointer', background: isScanning ? 'var(--bg-secondary)' : '', border: '1px dashed var(--accent-color)' }}
+          >
+            {isScanning ? (
+              <>
+                <Loader2 size={18} className="animate-spin text-accent" /> 
+                <span className="text-accent">Scanning ({scanProgress}%)</span>
+              </>
+            ) : (
+              <>
+                <UploadCloud size={18} className="text-accent" /> 
+                Auto-Fill from Screenshot
+              </>
+            )}
+          </label>
+        </div>
+      </div>
+
       <div className="cgpa-display glass-panel" style={{ display: 'flex', alignItems: 'center', padding: '32px 40px' }}>
         <div className="display-content" style={{ flex: 1 }}>
           <h3 style={{ fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Semester CGPA</h3>

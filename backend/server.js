@@ -3,12 +3,13 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import User from './models/User.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // ------------------------------
 // MongoDB Connection
@@ -25,6 +26,49 @@ mongoose.connect(MONGO_URI)
 // ------------------------------
 // Routes
 // ------------------------------
+
+// Screenshot Scanner Route (Gemini OCR)
+app.post('/api/scan-screenshot', async (req, res) => {
+  try {
+    const { imageBase64, mimeType } = req.body;
+    if (!imageBase64) return res.status(400).json({ error: "Missing image" });
+    
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "No Gemini Key Configured. Please configure standard environments to utilize this tool!" });
+    }
+    
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    const prompt = `You are a strict data extractor. Analyze this tabular screenshot of university subject registrations.
+Extract each registered course's Basic Name and its assigned Credits (which is always the bottom-most number in the vertical LTPJC matrix or explicitly shown on the same line if single).
+Also, identify if it's a lab (contains words like "Lab", "Practice" or code ending in 'P').
+Do NOT include course codes (like BITE304L) in the name. Just the plain name. Make sure it is capitalized correctly.
+Respond ONLY with a JSON array of objects. Like this:
+[{"name": "Web Technologies", "credits": 3.0, "type": "theory"}, {"name": "Software Engineering Lab", "credits": 1.0, "type": "lab"}]`;
+
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: imageBase64.split(',')[1] || imageBase64,
+          mimeType: mimeType || "image/jpeg"
+        }
+      }
+    ]);
+    
+    let jsonStr = result.response.text();
+    jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    // Parse strictly to validate
+    const subjects = JSON.parse(jsonStr);
+    
+    res.json({ success: true, data: subjects });
+  } catch (err) {
+    console.error("Gemini AI failed: ", err);
+    res.status(500).json({ error: "Gemini Vision completely failed to decode formatting: " + err.message });
+  }
+});
 
 // Signup Route
 app.post('/api/auth/signup', async (req, res) => {

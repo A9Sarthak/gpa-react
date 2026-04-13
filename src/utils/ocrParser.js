@@ -1,109 +1,69 @@
-import Tesseract from 'tesseract.js';
-
 /**
- * Extracts subjects and credits from an uploaded semester screenshot natively in browser.
- * Uses a heuristic state-machine approach tuned for standard tabular grade sheets.
+ * Forwards a screenshot to the securely attached Backend VLM node for intelligent extraction.
  */
 export const scanImageForSubjects = async (imageFile, onProgress) => {
-  try {
-    const worker = await Tesseract.createWorker("eng", 1, {
-      logger: m => {
-        if (m.status === 'recognizing text' && onProgress) {
-          onProgress(Math.round(m.progress * 100));
-        } else if (onProgress && m.status && m.status.includes('loading')) {
-          onProgress(10); // Show some progress for loading
-        }
-      }
-    });
+  return new Promise((resolve, reject) => {
+    if (onProgress) onProgress(10);
     
-    const { data: { text } } = await worker.recognize(imageFile);
-    await worker.terminate();
-
-    return parseHeuristic(text);
-  } catch (error) {
-    console.error("OCR Scan Error:", error);
-    throw error;
-  }
-};
-
-const parseHeuristic = (rawText) => {
-  const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const subjects = [];
-  
-  // Basic Regex for Subject code: 3-4 letters, 3-4 digits, optional 1 letter
-  const courseCodeRegex = /[A-Z]{3,4}\s?\d{3,4}[A-Z]?/;
-  
-  // Valid credits format in screenshots (Only decimals to aggressively prevent grabbing Row Numbers like '5', '6' from the far left column)
-  const validCredits = ["1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0", "6.0", "9.0", "20.0"];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const matchPos = line.search(courseCodeRegex);
-
-    // Attempt to identify a subject Name row
-    if (matchPos !== -1) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      if (onProgress) onProgress(40); // Image encoded
       
-      const codeMatch = line.match(courseCodeRegex);
-      const code = codeMatch ? codeMatch[0] : "";
-      
-      // Start capturing the name explicitly AFTER the course code so we don't accidentally truncate ourselves!
-      let textFromCode = line.substring(matchPos + code.length).trim();
-      
-      if (textFromCode.startsWith('-')) {
-        textFromCode = textFromCode.substring(1).trim();
-      }
-      
-      // Stop the name explicitly when encountering course metadata columns (numbers, structural keywords)
-      let cleanName = textFromCode;
-      const stopMatch = textFromCode.match(/(\(|~|\||\d| Discipline | Foundation | Core | Regular | Engineering )/i);
-      if (stopMatch) {
-        cleanName = textFromCode.substring(0, stopMatch.index).trim();
-      } else {
-        cleanName = cleanName.trim();
-      }
-
-      // Check if it's a lab (P at the end of code, or contains Lab/Practice)
-      const isLab = cleanName.toLowerCase().includes('lab') || cleanName.toLowerCase().includes('practice') || code.endsWith('P') || (code.endsWith('L') === false && code.match(/[A-Z]+[0-9]+[PL]/));
-      
-      let creditValue = 3; // Default fallback
-      let lastFoundCredit = null;
-
-      for (let j = 0; j <= 6 && (i + j) < lines.length; j++) {
-        const checkLine = lines[i + j];
-        // Break out immediately if we accidentally hit the next subject code entirely
-        if (j > 0 && courseCodeRegex.test(checkLine)) break;
+      try {
+        // Base backend route assumes local proxy or defined environment backend. 
+        // Vercel routes handle absolute paths natively.
+        const backendEndpoint = '/api/scan-screenshot';
         
-        // Scan tokens
-        const tokens = checkLine.split(/\s+/);
-        for (const token of tokens) {
-          if (validCredits.includes(token)) {
-            lastFoundCredit = parseFloat(token);
-          }
+        const response = await fetch(backendEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageBase64: e.target.result,
+            mimeType: imageFile.type
+          })
+        });
+        
+        if (onProgress) onProgress(80); // AI Thinking finished
+        
+        const resData = await response.json();
+        
+        if (!response.ok || !resData.success) {
+           throw new Error(resData.error || "Internal Server Block during OCR");
         }
+        
+        const subjectsRaw = resData.data;
+        const cachedCredits = JSON.parse(localStorage.getItem('userCreditCache') || '{}');
+        
+        const mappedSubjects = subjectsRaw.map(s => {
+           let finalCredit = parseFloat(s.credits) || 3.0;
+           const compName = s.name.trim().toLowerCase();
+           
+           // Reinforcing strict global constraints
+           if (compName.includes('quantitative skill') || compName.includes('qualitative skill')) {
+             finalCredit = 1.5;
+           } else if (cachedCredits[compName] !== undefined && !isNaN(cachedCredits[compName])) {
+             finalCredit = cachedCredits[compName];
+           }
+           
+           return {
+              id: crypto.randomUUID(),
+              name: s.name.trim(),
+              credits: finalCredit,
+              grade: 'S',
+              type: s.type === 'lab' ? 'lab' : 'theory'
+           };
+        });
+        
+        if (onProgress) onProgress(100);
+        resolve(mappedSubjects);
+        
+      } catch (err) {
+        console.error("VLM Error:", err);
+        reject(err);
       }
-      
-      const compName = cleanName.toLowerCase();
-      const cachedCredits = JSON.parse(localStorage.getItem('userCreditCache') || '{}');
-      
-      // AI Learning: Override heuristic with strictly known values or previously learned user values
-      if (compName.includes('quantitative skill') || compName.includes('qualitative skill')) {
-        creditValue = 1.5;
-      } else if (cachedCredits[compName] !== undefined && !isNaN(cachedCredits[compName])) {
-        creditValue = cachedCredits[compName];
-      } else if (lastFoundCredit !== null) {
-        creditValue = lastFoundCredit;
-      }
-
-      // Filter out duplicate identical basic names globally avoiding spam
-      subjects.push({
-        id: crypto.randomUUID(),
-        name: cleanName,
-        credits: creditValue,
-        grade: 'S', // Default assumed grade
-        type: isLab ? 'lab' : 'theory'
-      });
-    }
-  }
-
-  return subjects;
+    };
+    
+    reader.onerror = () => reject(new Error("Local File processing failed before AI injection."));
+    reader.readAsDataURL(imageFile);
+  });
 };

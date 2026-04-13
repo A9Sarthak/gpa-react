@@ -126,6 +126,16 @@ export default function SemesterCalculator({ initialData, onChange, onAddToCGPA 
     const list = type === 'theory' ? theorySubjects : labSubjects;
     const setList = type === 'theory' ? setTheorySubjects : setLabSubjects;
     
+    // Auto-Learning cache hook for AI OCR Scanner
+    if (field === 'credits') {
+      const subject = list.find(curr => curr.id === id);
+      if (subject && subject.name && subject.name.trim().length > 0) {
+        const cached = JSON.parse(localStorage.getItem('userCreditCache') || '{}');
+        cached[subject.name.trim().toLowerCase()] = Number(value);
+        localStorage.setItem('userCreditCache', JSON.stringify(cached));
+      }
+    }
+    
     setList(list.map(curr => curr.id === id ? { ...curr, [field]: value } : curr));
   };
 

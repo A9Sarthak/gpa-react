@@ -82,7 +82,15 @@ const parseHeuristic = (rawText) => {
         }
       }
       
-      if (lastFoundCredit !== null) {
+      const compName = cleanName.toLowerCase();
+      const cachedCredits = JSON.parse(localStorage.getItem('userCreditCache') || '{}');
+      
+      // AI Learning: Override heuristic with strictly known values or previously learned user values
+      if (compName.includes('quantitative skill') || compName.includes('qualitative skill')) {
+        creditValue = 1.5;
+      } else if (cachedCredits[compName] !== undefined && !isNaN(cachedCredits[compName])) {
+        creditValue = cachedCredits[compName];
+      } else if (lastFoundCredit !== null) {
         creditValue = lastFoundCredit;
       }
 

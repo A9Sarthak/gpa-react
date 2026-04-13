@@ -6,16 +6,15 @@ import Tesseract from 'tesseract.js';
  */
 export const scanImageForSubjects = async (imageFile, onProgress) => {
   try {
-    const worker = await Tesseract.createWorker({
+    const worker = await Tesseract.createWorker("eng", 1, {
       logger: m => {
         if (m.status === 'recognizing text' && onProgress) {
           onProgress(Math.round(m.progress * 100));
+        } else if (onProgress && m.status && m.status.includes('loading')) {
+          onProgress(10); // Show some progress for loading
         }
       }
     });
-    
-    await worker.loadLanguage('eng');
-    await worker.initialize('eng');
     
     const { data: { text } } = await worker.recognize(imageFile);
     await worker.terminate();

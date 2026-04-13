@@ -27,36 +27,56 @@ export default function SemesterCalculator({ initialData, onChange, onAddToCGPA 
   const [scanProgress, setScanProgress] = useState(0);
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
 
     try {
       setIsScanning(true);
       setScanProgress(0);
       
-      const extractedSubjects = await scanImageForSubjects(file, (progress) => {
-        setScanProgress(progress);
-      });
-      
-      if (extractedSubjects.length > 0) {
-        const newTheory = extractedSubjects.filter(s => s.type === 'theory');
-        const newLabs = extractedSubjects.filter(s => s.type === 'lab');
-        
-        // Remove empty default rows if they exist untouched
-        let currentTheory = theorySubjects.length === 5 && theorySubjects[0].name === '' ? [] : theorySubjects;
-        let currentLabs = labSubjects.length === 3 && labSubjects[0].name === '' ? [] : labSubjects;
+      let allExtractedSubjects = [];
+      const numFiles = files.length;
 
-        setTheorySubjects([...currentTheory, ...newTheory]);
-        setLabSubjects([...currentLabs, ...newLabs]);
+      for (let i = 0; i < numFiles; i++) {
+        const file = files[i];
+        const extracted = await scanImageForSubjects(file, (progress) => {
+          // Weight the progress bar strictly across multiple files seamlessly!
+          setScanProgress(Math.round(((i * 100) + progress) / numFiles));
+        });
+        allExtractedSubjects.push(...extracted);
+      }
+      
+      if (allExtractedSubjects.length > 0) {
+        // Remove empty default rows if they exist untouched before merging real ones!
+        let currentTheory = theorySubjects.length === 5 && theorySubjects[0].name === '' ? [] : [...theorySubjects];
+        let currentLabs = labSubjects.length === 3 && labSubjects[0].name === '' ? [] : [...labSubjects];
+
+        const existingNames = new Set([...currentTheory, ...currentLabs].map(s => s.name.trim().toLowerCase()));
+
+        const uniqueNewTheory = [];
+        const uniqueNewLabs = [];
+
+        // Distribute and block pure identical duplicates automatically!
+        allExtractedSubjects.forEach(s => {
+          const compName = s.name.trim().toLowerCase();
+          if (!existingNames.has(compName)) {
+            existingNames.add(compName);
+            if (s.type === 'theory') uniqueNewTheory.push(s);
+            else uniqueNewLabs.push(s);
+          }
+        });
+
+        setTheorySubjects([...currentTheory, ...uniqueNewTheory]);
+        setLabSubjects([...currentLabs, ...uniqueNewLabs]);
       } else {
-        alert("Could not detect any clear subjects or credits. Please ensure the screenshot contains course codes (like BITE304L) and credits clearly.");
+        alert("Could not detect any clear subjects or credits. Please ensure the screenshot contains formal core course codes and distinct credits clearly.");
       }
     } catch (err) {
       alert("Error scanning image: " + err.message);
     } finally {
       setIsScanning(false);
       setScanProgress(0);
-      // Reset input
+      // Reset input unconditionally
       e.target.value = null;
     }
   };
@@ -206,6 +226,7 @@ export default function SemesterCalculator({ initialData, onChange, onAddToCGPA 
             type="file" 
             id="ocr-upload" 
             accept="image/*" 
+            multiple
             style={{ display: 'none' }} 
             onChange={handleImageUpload}
             disabled={isScanning}

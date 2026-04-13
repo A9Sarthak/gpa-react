@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Form Validation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input:invalid {
+            border-color: #ff4444;
+        }
+        input:valid {
+            border-color: #44ff44;
+        }
+        .error {
+            color: #ff4444;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .success {
+            color: #28a745;
+            background-color: #d4edda;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Form Validation</h1>
+    <form id="validationForm">
+        <div class="form-group">
+            <label for="name">Full Name:</label>
+            <input type="text" id="name" name="name" required minlength="2">
+            <div class="error" id="nameError">Name must be at least 2 characters.</div>
+        </div>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+            <div class="error" id="emailError">Please enter a valid email address.</div>
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required minlength="6">
+            <div class="error" id="passwordError">Password must be at least 6 characters.</div>
+        </div>
+        <div class="form-group">
+            <label for="age">Age:</label>
+            <input type="number" id="age" name="age" required min="18" max="100">
+            <div class="error" id="ageError">Age must be between 18 and 100.</div>
+        </div>
+        <button type="submit" id="submitBtn">Submit</button>
+    </form>
+    <div class="success" id="successMsg">
+        Form submitted successfully! Check console for form data.
+    </div>
+
+    <script>
+        const form = document.getElementById('validationForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const successMsg = document.getElementById('successMsg');
+
+        // Real-time validation
+        const inputs = form.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('input', validateField);
+            input.addEventListener('blur', validateField);
+        });
+
+        function validateField(e) {
+            const field = e.target;
+            const errorElement = document.getElementById(field.id + 'Error');
+            
+            // Clear previous errors
+            errorElement.style.display = 'none';
+            
+            // Check validity
+            if (field.validity.valid) {
+                field.style.borderColor = '#44ff44';
+                return true;
+            }
+            
+            // Show specific error
+            field.style.borderColor = '#ff4444';
+            if (field.validity.valueMissing) {
+                errorElement.textContent = field.name + ' is required.';
+            } else if (field.validity.tooShort) {
+                errorElement.textContent = field.name + ' must be at least ' + field.minLength + ' characters.';
+            } else if (field.validity.typeMismatch) {
+                errorElement.textContent = 'Please enter a valid ' + field.name + '.';
+            } else if (field.validity.rangeUnderflow) {
+                errorElement.textContent = field.name + ' must be at least ' + field.min + '.';
+            } else if (field.validity.rangeOverflow) {
+                errorElement.textContent = field.name + ' must be at most ' + field.max + '.';
+            }
+            errorElement.style.display = 'block';
+            return false;
+        }
+
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate all fields
+            let isValid = true;
+            inputs.forEach(input => {
+                if (!validateField({target: input})) {
+                    isValid = false;
+                }
+            });
+            
+            if (isValid) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+                
+                // Simulate form submission
+                console.log('Form Data:', Object.fromEntries(new FormData(form)));
+                
+                // Show success message
+                successMsg.style.display = 'block';
+                setTimeout(() => {
+                    form.reset();
+                    inputs.forEach(input => input.style.borderColor = '#ddd');
+                    successMsg.style.display = 'none';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit';
+                }, 2000);
+            }
+        });
+
+        // Initial validation on load
+        inputs.forEach(input => validateField({target: input}));
+    </script>
+</body>
+</html>

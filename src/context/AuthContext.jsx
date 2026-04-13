@@ -6,7 +6,7 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 // Replaced useLocalStorage with useState for most user state
   const [currentUser, setCurrentUser] = useLocalStorage('current_user', null);
   const [userData, setUserData] = useState(null);

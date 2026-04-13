@@ -102,15 +102,16 @@ export default function SemesterCalculator({ initialData, onChange, onAddToCGPA 
                     />
                   </td>
                   <td>
-                    <select 
+                    <input 
+                      type="number"
                       className="input-field" 
+                      list="credits-options"
+                      min="0"
+                      step="0.5"
                       value={sub.credits}
-                      onChange={(e) => updateSubject(type, sub.id, 'credits', Number(e.target.value))}
-                    >
-                      {[1, 1.5, 2, 3, 4, 5, 20].map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
+                      onChange={(e) => updateSubject(type, sub.id, 'credits', e.target.value ? Number(e.target.value) : "")}
+                      placeholder="Credits"
+                    />
                   </td>
                   <td>
                     <select 
@@ -173,6 +174,12 @@ export default function SemesterCalculator({ initialData, onChange, onAddToCGPA 
 
       {renderSubjectTable('theory', theorySubjects)}
       {renderSubjectTable('lab', labSubjects)}
+      
+      <datalist id="credits-options">
+        {[1, 1.5, 2, 3, 4, 5, 6, 9, 20].map(c => (
+          <option key={c} value={c} />
+        ))}
+      </datalist>
     </div>
   );
 }

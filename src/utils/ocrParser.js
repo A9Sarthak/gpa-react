@@ -31,12 +31,19 @@ export const scanImageForSubjects = async (imageFile, onProgress) => {
            throw new Error(resData.error || "Internal Server Block during OCR");
         }
         
-        const subjectsRaw = resData.data;
+        let subjectsRaw = resData.data;
+        // LLM formatting safety fallback
+        if (!Array.isArray(subjectsRaw)) {
+          if (subjectsRaw && Array.isArray(subjectsRaw.subjects)) subjectsRaw = subjectsRaw.subjects;
+          else if (subjectsRaw && Array.isArray(subjectsRaw.data)) subjectsRaw = subjectsRaw.data;
+          else subjectsRaw = [];
+        }
+        
         const cachedCredits = JSON.parse(localStorage.getItem('userCreditCache') || '{}');
         
         const mappedSubjects = subjectsRaw.map(s => {
            let finalCredit = parseFloat(s.credits) || 3.0;
-           const compName = s.name.trim().toLowerCase();
+           const compName = (s.name || "").trim().toLowerCase();
            
            // Reinforcing strict global constraints
            if (compName.includes('quantitative skill') || compName.includes('qualitative skill')) {

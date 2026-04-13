@@ -102,16 +102,29 @@ export default function SemesterCalculator({ initialData, onChange, onAddToCGPA 
                     />
                   </td>
                   <td>
-                    <input 
-                      type="number"
-                      className="input-field" 
-                      list="credits-options"
-                      min="0"
-                      step="0.5"
-                      value={sub.credits}
-                      onChange={(e) => updateSubject(type, sub.id, 'credits', e.target.value ? Number(e.target.value) : "")}
-                      placeholder="Credits"
-                    />
+                    <div style={{ display: 'flex', gap: '8px', minWidth: '140px' }}>
+                      <input 
+                        type="number"
+                        className="input-field" 
+                        min="0"
+                        step="0.5"
+                        value={sub.credits}
+                        onChange={(e) => updateSubject(type, sub.id, 'credits', e.target.value ? Number(e.target.value) : "")}
+                        placeholder="Credits"
+                        style={{ flex: 1, padding: '8px' }}
+                      />
+                      <select 
+                        className="input-field" 
+                        value={sub.credits}
+                        onChange={(e) => updateSubject(type, sub.id, 'credits', Number(e.target.value))}
+                        style={{ width: '50px', padding: '8px 4px', cursor: 'pointer' }}
+                        title="Quick Select"
+                      >
+                        {[1, 1.5, 2, 3, 4, 5, 6, 9, 20].map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
                   </td>
                   <td>
                     <select 
@@ -174,12 +187,6 @@ export default function SemesterCalculator({ initialData, onChange, onAddToCGPA 
 
       {renderSubjectTable('theory', theorySubjects)}
       {renderSubjectTable('lab', labSubjects)}
-      
-      <datalist id="credits-options">
-        {[1, 1.5, 2, 3, 4, 5, 6, 9, 20].map(c => (
-          <option key={c} value={c} />
-        ))}
-      </datalist>
     </div>
   );
 }

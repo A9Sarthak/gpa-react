@@ -1,39 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import LandingPage from './components/LandingPage';
 import AuthScreen from './components/AuthScreen';
 import Dashboard from './components/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
-// Main app router that consumes auth
-const AppRouter = () => {
-  const { currentUser } = useAuth();
-  
-  // Available views: 'landing', 'auth', 'dashboard'
-  // If currentUser dynamically appears (log in), we force them to dashboard in useEffect.
-  const [currentView, setCurrentView] = useState('landing');
-
-  useEffect(() => {
-    if (currentUser) {
-      setCurrentView('dashboard');
-    } else if (currentView === 'dashboard') {
-      // If they logged out while on dashboard
-      setCurrentView('landing');
-    }
-  }, [currentUser]);
-
-  const renderView = () => {
-    if (currentView === 'landing') return <LandingPage setView={setCurrentView} />;
-    if (currentView === 'auth') return <AuthScreen />;
-    if (currentView === 'dashboard') return <Dashboard />;
-    return <LandingPage setView={setCurrentView} />;
-  };
-
+// Layout wrapper to easily include Nahbar on all pages
+const AppLayout = () => {
   return (
     <>
-      <Navbar currentView={currentView} setView={setCurrentView} />
-      {renderView()}
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<AuthScreen />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        {/* Render landing page for unknown routes */}
+        <Route path="*" element={<LandingPage />} />
+      </Routes>
     </>
   );
 };
@@ -42,7 +35,9 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AppRouter />
+        <Router>
+          <AppLayout />
+        </Router>
       </AuthProvider>
     </ThemeProvider>
   );

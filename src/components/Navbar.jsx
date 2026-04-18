@@ -1,20 +1,24 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { GraduationCap, Sun, Moon, LogIn, LogOut } from 'lucide-react';
+import { GraduationCap, Sun, Moon, LogIn, LogOut, LayoutDashboard } from 'lucide-react';
+import { MagneticButton } from './Spotlight';
 import './Navbar.css';
 
-export default function Navbar({ currentView, setView }) {
+export default function Navbar() {
   const { currentUser, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogoClick = () => {
-    setView('landing');
+    navigate('/');
   };
 
   const handleLogout = () => {
     logout();
-    setView('landing');
+    navigate('/');
   };
 
   return (
@@ -32,19 +36,54 @@ export default function Navbar({ currentView, setView }) {
 
           {currentUser ? (
             <div className="auth-actions-logged-in">
-              <div className="avatar-small" title={currentUser}>
-                {currentUser !== 'guest' ? currentUser.charAt(0).toUpperCase() : 'G'}
-              </div>
-              <button className="btn-secondary btn-nav-logout" onClick={handleLogout}>
-                <LogOut size={16} /> <span className="hide-mobile">Log out</span>
-              </button>
+              {currentUser !== 'guest' && (
+                <MagneticButton
+                  className="btn-primary"
+                  onClick={() => navigate('/dashboard')}
+                  style={{ padding: '8px 16px', marginRight: '10px' }}
+                  strength={0.28}
+                  maxShift={8}
+                >
+                  <LayoutDashboard size={16} /> <span className="hide-mobile">Dashboard</span>
+                </MagneticButton>
+              )}
+              
+              {currentUser !== 'guest' ? (
+                <>
+                  <div className="avatar-small" title={currentUser}>
+                    {currentUser.charAt(0).toUpperCase()}
+                  </div>
+                  <MagneticButton
+                    className="btn-secondary btn-nav-logout"
+                    onClick={handleLogout}
+                    strength={0.28}
+                    maxShift={8}
+                  >
+                    <LogOut size={16} /> <span className="hide-mobile">Log out</span>
+                  </MagneticButton>
+                </>
+              ) : (
+                <MagneticButton
+                  className="btn-secondary btn-nav-logout"
+                  onClick={() => { logout(); navigate('/login'); }}
+                  strength={0.28}
+                  maxShift={8}
+                >
+                  <LogIn size={16} /> <span className="hide-mobile">Sign In</span>
+                </MagneticButton>
+              )}
             </div>
           ) : (
             <div className="auth-actions-logged-out">
-              {currentView !== 'auth' && (
-                <button className="btn-primary" onClick={() => setView('auth')}>
+              {location.pathname !== '/login' && (
+                <MagneticButton
+                  className="btn-primary"
+                  onClick={() => navigate('/login')}
+                  strength={0.28}
+                  maxShift={8}
+                >
                   <LogIn size={18} /> Sign In
-                </button>
+                </MagneticButton>
               )}
             </div>
           )}

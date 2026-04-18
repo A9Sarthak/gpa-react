@@ -1,0 +1,78 @@
+/* ─── Shared spotlight radial glow ─────────────────────────────────────────── */
+/* 
+  Both .spotlight-card and .magnetic-btn share the same ::before trick:
+  a position:absolute pseudo-element whose background is a radial-gradient
+  centred at (--x, --y) — the CSS variable written by the JS pointer handler.
+  Opacity is driven by --spot-op so it fades in/out without repaints.
+*/
+
+/* ─── Spotlight Card ─────────────────────────────────────────────────────── */
+.spotlight-card {
+  position: relative;
+  overflow: hidden;           /* keeps the glow clipped to the card boundary */
+  isolation: isolate;
+}
+
+.spotlight-card::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+
+  /* Radial glow centred at cursor position */
+  background: radial-gradient(
+    300px circle at var(--x, 50%) var(--y, 50%),
+    rgba(160, 100, 255, 0.13) 0%,
+    rgba(100, 80, 200, 0.06) 45%,
+    transparent 70%
+  );
+
+  opacity: var(--spot-op, 0);
+  transition: opacity 0.4s ease;
+  z-index: 0;
+}
+
+/* Ensure card children sit above the glow layer */
+.spotlight-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Magnetic Button ────────────────────────────────────────────────────── */
+.magnetic-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  /* Smooth transition back to resting position */
+  will-change: transform;
+}
+
+.magnetic-btn::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+
+  background: radial-gradient(
+    120% 120% at var(--x, 50%) var(--y, 50%),
+    rgba(200, 140, 255, 0.22) 0%,
+    rgba(140, 100, 230, 0.10) 40%,
+    transparent 70%
+  );
+
+  opacity: var(--spot-op, 0);
+  transition: opacity 0.35s ease;
+  z-index: 0;
+}
+
+.magnetic-btn > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Slightly brighten border on hover to complement the glow */
+.magnetic-btn:hover {
+  border-color: rgba(160, 100, 255, 0.45) !important;
+}

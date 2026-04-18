@@ -31,6 +31,7 @@ mongoose.connect(MONGO_URI)
 app.post('/api/scan-screenshot', async (req, res) => {
   try {
     const { imageBase64, mimeType } = req.body;
+    console.log('📸 Scan request received. Image size:', imageBase64 ? imageBase64.length : 0, 'bytes');
     if (!imageBase64) return res.status(400).json({ error: "Missing image" });
     
     if (!process.env.GEMINI_API_KEY) {

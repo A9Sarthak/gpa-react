@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GraduationCap, LogIn, UserPlus, User, Eye, EyeOff } from 'lucide-react';
 import './AuthScreen.css'; // Let's define some specific scoped CSS here or just use scoped classes
@@ -11,6 +12,7 @@ export default function AuthScreen() {
   const [error, setError] = useState('');
   
   const { login, signup, loginAsGuest } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,10 +28,17 @@ export default function AuthScreen() {
     if (isLogin) {
       const res = await login(normalizedUsername, password);
       if (!res.success) setError(res.error);
+      else navigate('/dashboard');
     } else {
       const res = await signup(normalizedUsername, password);
       if (!res.success) setError(res.error);
+      else navigate('/dashboard');
     }
+  };
+
+  const handleGuestLogin = () => {
+    loginAsGuest();
+    navigate('/dashboard');
   };
 
   return (
@@ -92,7 +101,7 @@ export default function AuthScreen() {
 
         <button 
           className="btn-secondary guest-btn" 
-          onClick={loginAsGuest}
+          onClick={handleGuestLogin}
           type="button"
         >
           <User size={18} />

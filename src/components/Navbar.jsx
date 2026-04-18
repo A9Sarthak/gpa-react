@@ -26,7 +26,7 @@ export default function Navbar() {
       <div className="navbar-container">
         <div className="nav-brand-clickable" onClick={handleLogoClick}>
           <GraduationCap size={32} className="text-accent" />
-          <span className="brand-text">Grade<span className="smooth-gradient-text">vity</span></span>
+          <span className="brand-text">Grade<span className="smooth-gradient-text">Vity</span></span>
         </div>
 
         <div className="nav-actions-group">

@@ -48,7 +48,7 @@ export default function AuthScreen() {
           <div className="icon-wrapper">
             <GraduationCap size={40} className="text-accent" />
           </div>
-          <h1>Grade<span className="smooth-gradient-text">vity</span></h1>
+          <h1>Grade<span className="smooth-gradient-text">Vity</span></h1>
           <p className="subtitle">{isLogin ? 'Welcome back! Log in to continue.' : 'Create an account to start tracking.'}</p>
         </div>
 

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ArrowRight, Cloud, Shield, Calculator, LayoutDashboard, BarChart3, Sparkles } from 'lucide-react';
 import './LandingPage.css';
-import MetaballBackground from './MetaballBackground';
+import './LandingPage.css';
 import { SpotlightCard, MagneticButton } from './Spotlight';
 
 // Component for sub-pixel localized text brightening
@@ -52,7 +52,6 @@ export default function LandingPage() {
 
   return (
     <>
-      <MetaballBackground />
       <div className="landing-container animate-fade-in">
         
         {/* Hero Section */}

@@ -8,10 +8,13 @@ import AuthScreen from './components/AuthScreen';
 import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Layout wrapper to easily include Nahbar on all pages
+import MetaballBackground from './components/MetaballBackground';
+
+// Layout wrapper to easily include Navbar and global background on all pages
 const AppLayout = () => {
   return (
     <>
+      <MetaballBackground />
       <Navbar />
       <Routes>
         <Route path="/" element={<LandingPage />} />

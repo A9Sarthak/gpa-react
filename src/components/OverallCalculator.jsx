@@ -5,7 +5,7 @@ import './Calculator.css';
 export default function OverallCalculator({ initialData, onChange }) {
   // If no initial data, start with Sem 1
   const [semesters, setSemesters] = useState(
-    initialData?.semesters || [{ id: crypto.randomUUID(), name: 'Sem 1', credits: 20, gpa: 9.0 }]
+    initialData?.semesters || [{ id: crypto.randomUUID(), name: 'Sem 1', credits: 20, gpa: 9.0, isIncluded: true }]
   );
 
   const computeStats = () => {
@@ -13,7 +13,8 @@ export default function OverallCalculator({ initialData, onChange }) {
     let totalWeightedPoints = 0;
 
     semesters.forEach(sem => {
-      if (sem.credits > 0 && sem.gpa >= 0) {
+      // Default isIncluded to true for older saves without the property
+      if (sem.isIncluded !== false && sem.credits > 0 && sem.gpa >= 0) {
         totalCredits += Number(sem.credits);
         totalWeightedPoints += Number(sem.credits) * Number(sem.gpa);
       }
@@ -35,7 +36,7 @@ export default function OverallCalculator({ initialData, onChange }) {
 
   const addSemester = () => {
     const nextSemNumber = semesters.length + 1;
-    setSemesters([...semesters, { id: crypto.randomUUID(), name: `Sem ${nextSemNumber}`, credits: 20, gpa: 9.0 }]);
+    setSemesters([...semesters, { id: crypto.randomUUID(), name: `Sem ${nextSemNumber}`, credits: 20, gpa: 9.0, isIncluded: true }]);
   };
 
   const removeSemester = (id) => {
@@ -79,6 +80,7 @@ export default function OverallCalculator({ initialData, onChange }) {
                 <th>Identifier</th>
                 <th>Total Credits</th>
                 <th>GPA Achieved</th>
+                <th>Include</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -116,6 +118,16 @@ export default function OverallCalculator({ initialData, onChange }) {
                     />
                   </td>
                   <td>
+                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', height: '100%' }}>
+                      <input 
+                        type="checkbox"
+                        checked={sem.isIncluded !== false}
+                        onChange={(e) => updateSemester(sem.id, 'isIncluded', e.target.checked)}
+                        style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)', cursor: 'pointer' }}
+                      />
+                    </label>
+                  </td>
+                  <td>
                     <button className="delete-btn" onClick={() => removeSemester(sem.id)}>
                       <Trash2 size={18} />
                     </button>
@@ -124,7 +136,7 @@ export default function OverallCalculator({ initialData, onChange }) {
               ))}
               {semesters.length === 0 && (
                 <tr>
-                  <td colSpan="4" className="empty-state">No semesters added.</td>
+                  <td colSpan="5" className="empty-state">No semesters added.</td>
                 </tr>
               )}
             </tbody>

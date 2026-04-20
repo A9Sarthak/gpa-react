@@ -128,8 +128,8 @@ button {
 /* Premium Glassmorphism */
 .glass-panel {
   background: var(--bg-surface);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--card-border);
   border-top: 1px solid var(--border-color);
   border-left: 1px solid var(--border-color);
@@ -154,8 +154,6 @@ button {
   width: 100%;
   padding: 14px 18px;
   background-color: var(--bg-input);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--card-border);
   border-top: 1px solid var(--border-color);
   border-left: 1px solid var(--border-color);

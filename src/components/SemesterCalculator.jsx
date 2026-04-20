@@ -18,10 +18,19 @@ const GRADE_POINTS = {
 const DEFAULT_THEORY = Array.from({ length: 5 }, () => ({ id: crypto.randomUUID(), name: '', credits: 3, grade: 'S' }));
 const DEFAULT_LAB = Array.from({ length: 3 }, () => ({ id: crypto.randomUUID(), name: '', credits: 1, grade: 'S' }));
 
-export default function SemesterCalculator({ initialData, onChange, onAddToCGPA }) {
+export default function SemesterCalculator({ initialData, overallData, onChange, onAddToCGPA }) {
   const [theorySubjects, setTheorySubjects] = useState(initialData?.theory || DEFAULT_THEORY);
   const [labSubjects, setLabSubjects] = useState(initialData?.lab || DEFAULT_LAB);
   
+  // Sticky minimal header scroll state
+  const [isCompact, setIsCompact] = useState(false);
+  
+  useEffect(() => {
+    const handleScroll = () => setIsCompact(window.scrollY > 120);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // OCR State
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
@@ -82,24 +91,50 @@ export default function SemesterCalculator({ initialData, onChange, onAddToCGPA 
   };
 
   const computeStats = () => {
-    let totalCredits = 0;
-    let totalPoints = 0;
+    let semesterCredits = 0;
+    let semesterPoints = 0;
 
     const allSubjects = [...theorySubjects, ...labSubjects];
     
     allSubjects.forEach(sub => {
-      // Validate inputs
       if (sub.credits > 0 && Object.keys(GRADE_POINTS).includes(sub.grade)) {
-        totalCredits += Number(sub.credits);
-        totalPoints += Number(sub.credits) * GRADE_POINTS[sub.grade];
+        semesterCredits += Number(sub.credits);
+        semesterPoints += Number(sub.credits) * GRADE_POINTS[sub.grade];
       }
     });
 
-    const cgpa = totalCredits === 0 ? "0.0000" : (totalPoints / totalCredits).toFixed(4);
-    return { cgpa, totalCredits };
+    const cgpa = semesterCredits === 0 ? "0.0000" : (semesterPoints / semesterCredits).toFixed(4);
+
+    // Project CGPA using past semesters
+    let pastCredits = 0;
+    let pastPoints = 0;
+
+    if (overallData && Array.isArray(overallData.semesters)) {
+      overallData.semesters.forEach(sem => {
+        if (sem.isIncluded !== false && sem.credits > 0 && sem.gpa >= 0) {
+          pastCredits += Number(sem.credits);
+          pastPoints += Number(sem.credits) * Number(sem.gpa);
+        }
+      });
+    }
+
+    let projectedCgpa = null;
+    const totalCredits = semesterCredits + pastCredits;
+    const totalPoints = semesterPoints + pastPoints;
+
+    if (totalCredits > 0 && pastCredits > 0) {
+      projectedCgpa = (totalPoints / totalCredits).toFixed(4);
+    }
+    
+    // Return unified statistics object
+    return { 
+      cgpa, 
+      totalCredits: semesterCredits, 
+      projectedCgpa 
+    };
   };
 
-  const { cgpa: currentCgpa, totalCredits: currentCredits } = computeStats();
+  const { cgpa: currentCgpa, totalCredits: currentCredits, projectedCgpa } = computeStats();
 
   // Notify parent of changes
   useEffect(() => {
@@ -184,7 +219,7 @@ export default function SemesterCalculator({ initialData, onChange, onAddToCGPA 
                       style={{ padding: '8px' }}
                     />
                   </td>
-                  <td>
+                  <td style={{ minWidth: '150px' }}>
                     <select 
                       className="input-field" 
                       value={sub.grade}
@@ -249,28 +284,38 @@ export default function SemesterCalculator({ initialData, onChange, onAddToCGPA 
         </div>
       </div>
 
-      <div className="cgpa-display glass-panel" style={{ display: 'flex', alignItems: 'center', padding: '32px 40px' }}>
+      <div className={`cgpa-display glass-panel ${isCompact ? 'is-compact' : ''}`} style={{ display: 'flex', alignItems: 'center' }}>
         <div className="display-content" style={{ flex: 1 }}>
-          <h3 style={{ fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Semester CGPA</h3>
+          <h3 style={{ fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Semester GPA</h3>
           <div className="cgpa-value smooth-gradient-text" style={{ fontSize: '56px', fontWeight: '800', lineHeight: 1 }}>{currentCgpa}</div>
         </div>
 
-        <div style={{ width: '1px', height: '80px', background: 'var(--border-color)', margin: '0 40px' }}></div>
+        {projectedCgpa !== null && (
+          <>
+            <div className="divider" style={{ width: '1px', height: '80px', background: 'var(--border-color)', margin: '0 20px' }}></div>
+            <div className="display-content" style={{ flex: 1 }}>
+              <h3 style={{ fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Live Overall CGPA</h3>
+              <div className="cgpa-value" style={{ fontSize: '48px', fontWeight: '800', lineHeight: 1, color: 'var(--accent-hover)' }}>{projectedCgpa}</div>
+            </div>
+          </>
+        )}
+
+        <div className="divider" style={{ width: '1px', height: '80px', background: 'var(--border-color)', margin: projectedCgpa ? '0 20px' : '0 40px' }}></div>
 
         <div className="display-content" style={{ flex: 1 }}>
           <h3 style={{ fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Total Credits</h3>
-          <div className="cgpa-value" style={{ fontSize: '56px', fontWeight: '800', lineHeight: 1, color: 'var(--text-main)' }}>{currentCredits}</div>
+          <div className="cgpa-value" style={{ fontSize: '48px', fontWeight: '800', lineHeight: 1, color: 'var(--text-main)' }}>{currentCredits}</div>
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px', zIndex: 10 }}>
-          <FileOutput size={48} className="display-icon" style={{ opacity: 0.1, position: 'absolute', right: '40px' }} />
+          <FileOutput size={48} className="display-icon" style={{ opacity: 0.1, position: 'absolute', right: '40px', transition: 'all 0.4s ease' }} />
           {onAddToCGPA && (
             <button 
-              className="btn-primary" 
-              style={{ fontSize: '14px', padding: '10px 20px' }}
+              className="btn-primary cgpa-add-btn" 
+              style={{ fontSize: '14px', padding: isCompact ? '8px 12px' : '10px 20px', transition: 'padding 0.4s ease' }}
               onClick={() => onAddToCGPA(currentCredits, currentCgpa)}
             >
-              <Plus size={16} /> Add to CGPA
+              <Plus size={16} /> {!isCompact && 'Add to CGPA'}
             </button>
           )}
         </div>

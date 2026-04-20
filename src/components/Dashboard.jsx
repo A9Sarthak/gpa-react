@@ -111,6 +111,7 @@ export default function Dashboard() {
             <SemesterCalculator 
               key={userData ? 'loaded' : 'default'}
               initialData={semesterData || userData?.semester} 
+              overallData={overallData || userData?.overall}
               onChange={setSemesterData} 
               onAddToCGPA={handleAddToCGPA}
             />

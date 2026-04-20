@@ -399,8 +399,7 @@ export default function MetaballBackground() {
         height        : '100%',
         zIndex        : -1,
         pointerEvents : 'none',
-        background    : theme === 'light' ? '#f8fafc' : '#05060A',   // deeply dark black-navy baseline or light soft slate
-        filter        : 'blur(8px) contrast(0.95)', // Gentle depth blur, not overbearing
+        background    : 'transparent',
         transform     : 'scale(1.05)' // Prevent minor blur edge clipping
       }}
     />

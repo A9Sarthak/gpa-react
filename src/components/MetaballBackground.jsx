@@ -3,9 +3,11 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { useTheme } from '../context/ThemeContext';
 
 export default function MetaballBackground() {
   const mountRef = useRef(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     let animationFrameId;
@@ -52,7 +54,9 @@ export default function MetaballBackground() {
       u_resolution : { value: new THREE.Vector2(width, height) },
       u_particles  : { value: u_particles },
       u_time       : { value: 0.0 },
-      u_mergeGlow  : { value: 0.0 }   // ← drives the subtle merge brightness burst
+      u_mergeGlow  : { value: 0.0 },   // ← drives the subtle merge brightness burst
+      u_uiDimmer   : { value: 1.0 },   // ← adaptive safe-zone opacity
+      u_themeMode  : { value: theme === 'light' ? 1.0 : 0.0 }
     };
 
     // ─── Shaders ──────────────────────────────────────────────────────────────
@@ -69,6 +73,8 @@ export default function MetaballBackground() {
       uniform vec2  u_particles[${numParticles}];
       uniform float u_time;
       uniform float u_mergeGlow;
+      uniform float u_uiDimmer;
+      uniform float u_themeMode;
       varying vec2  vUv;
 
       void main() {
@@ -95,24 +101,41 @@ export default function MetaballBackground() {
           field += 0.002 / (d * d + 0.0001);
         }
 
-        // ── Soft boundary – wider smoothstep = no hard edge ──────────────────
-        float intensity = smoothstep(0.9, 1.5, field);
+        // ── Soft boundary – Size Limiting threshold tuning ──
+        // Decreased minimum to 0.4 so heavily scattered single particles 
+        // remain visibly drawn and don't optically vanish!
+        float intensity = smoothstep(0.4, 5.0, field);
 
-        // ── Premium dark-mode palette (deep navy → violet → icy periwinkle) ──
-        vec3 cDeep    = vec3(0.04, 0.06, 0.20);   // outer aura: deep navy
-        vec3 cMid     = vec3(0.30, 0.18, 0.58);   // body: soft violet
-        vec3 cCore    = vec3(0.38, 0.62, 0.88);   // core: icy periwinkle (never white)
+        // ── Theme Palettes ──
+        // Dark Mode: Deep Void, Magenta, Soft Pink
+        vec3 darkDeep = vec3(0.10, 0.05, 0.15);   
+        vec3 darkMid  = vec3(0.50, 0.15, 0.40);   
+        vec3 darkCore = vec3(0.80, 0.40, 0.60);   
 
-        float mapMid  = smoothstep(1.1, 2.8, field);
-        float mapCore = smoothstep(2.8, 5.5, field);
+        // Light Mode: Richer pastels for clear visibility on white background
+        vec3 lightDeep = vec3(0.75, 0.82, 0.95);  // Clear sky blue base
+        vec3 lightMid  = vec3(0.55, 0.65, 0.90);  // Rich, vibrant blue mid-tone
+        vec3 lightCore = vec3(0.85, 0.55, 0.82);  // Pronounced magenta/pink core
+
+        vec3 cDeep = mix(darkDeep, lightDeep, u_themeMode);
+        vec3 cMid  = mix(darkMid,  lightMid,  u_themeMode);
+        vec3 cCore = mix(darkCore, lightCore, u_themeMode);
+
+        float mapMid  = smoothstep(1.1, 2.5, field);
+        float mapCore = smoothstep(2.5, 8.0, field);
 
         vec3 col = mix(cDeep, cMid,  mapMid);
         col      = mix(col,   cCore, mapCore);
 
-        // ── Merge glow burst – subtle brightness lift, no colour shift ────────
-        col *= 1.0 + u_mergeGlow * 0.35;
+        // ── Merge glow burst ────────
+        col *= 1.0 + u_mergeGlow * 0.25;
 
-        gl_FragColor = vec4(col, intensity * 0.82);
+        // ── Adaptive Opacity (Safe Zones) ────────
+        // Fade out AND mathematically shrink by multiplying the raw intensity field
+        col *= u_uiDimmer;
+        float alpha = (intensity * u_uiDimmer) * 0.85;
+
+        gl_FragColor = vec4(col, alpha);
       }
     `;
 
@@ -133,15 +156,20 @@ export default function MetaballBackground() {
     const composer   = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
 
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height), 0.55, 0.7);
-    bloomPass.threshold = 0.18;
+    // Near zero bloom to guarantee no blindness or white cores
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height), 0.05, 0.8);
+    bloomPass.threshold = 0.50;
     composer.addPass(bloomPass);
 
     // ─── Interaction state ────────────────────────────────────────────────────
     const mouse       = new THREE.Vector2(-9999, -9999);
+    const lerpedMouse = new THREE.Vector2(-9999, -9999); // Dragging physics vector
     let   idleTimer   = 0.0;
     let   activeTimer = 10.0; // pre-warm so blobs start looking alive
     let   mergeGlow   = 0.0; // current glow level, smoothly decays
+    let   isUiHovered = false; // Tracks if a premium UI element is hovered
+    let   uiFadeMultiplier = 1.0;
+    let   explosionImpulse = 0.0; // Kinetic burst tracker
 
     const onMouseMove = (e) => {
       mouse.x   = e.clientX - width  / 2;
@@ -149,6 +177,15 @@ export default function MetaballBackground() {
       idleTimer = 0.0;
     };
     window.addEventListener('mousemove', onMouseMove);
+
+    const onUiHover = (e) => {
+      const active = e.detail?.active || false;
+      if (active && !isUiHovered) {
+        explosionImpulse = 1.0; // Trigger bang exactly on touch!
+      }
+      isUiHovered = active;
+    };
+    window.addEventListener('ui-hover-focus', onUiHover);
 
     const onResize = () => {
       width  = window.innerWidth;
@@ -177,6 +214,26 @@ export default function MetaballBackground() {
       material.uniforms.u_time.value += safeDt;
       idleTimer += safeDt;
 
+      // ── Smooth Cursor Tracking with Drag Offset ──
+      if (mouse.x > -9000) {
+        if (lerpedMouse.x < -9000) lerpedMouse.copy(mouse); // init
+        const targetX = mouse.x; 
+        const targetY = mouse.y; 
+        
+        // Lerp to offset target to create a physical drag lag
+        lerpedMouse.x += (targetX - lerpedMouse.x) * 0.035;
+        lerpedMouse.y += (targetY - lerpedMouse.y) * 0.035;
+      }
+      
+      // ── UI Safe Zone Dimming ──
+      // User explicitly requested to RESTORE blob opacity so it does not disappear.
+      const targetFade = 1.0;
+      uiFadeMultiplier += (targetFade - uiFadeMultiplier) * 0.12;
+      material.uniforms.u_uiDimmer.value = uiFadeMultiplier;
+
+      // Decay explosion impulse every frame to mimic a physical shockwave
+      explosionImpulse += (0.0 - explosionImpulse) * 0.1;
+
       // Active / idle bookkeeping
       if (idleTimer < 0.2) {
         activeTimer += safeDt;
@@ -195,16 +252,18 @@ export default function MetaballBackground() {
           if (d < 120) totalDensity += (120 - d) / 120; // 0-1 contribution per close pair
         }
       }
-      // Normalise and smooth the glow — spike fast, decay slowly
+      
+      // Normalise and smooth the glow — spike fast, decay slowly. 
       const targetGlow = Math.min(totalDensity / (numParticles * 0.8), 1.0);
+      
       if (targetGlow > mergeGlow) {
         mergeGlow += (targetGlow - mergeGlow) * 0.12; // fast attack
       } else {
-        mergeGlow += (targetGlow - mergeGlow) * 0.025; // slow release → settles naturally
+        mergeGlow += (targetGlow - mergeGlow) * 0.025; // slow release 
       }
       material.uniforms.u_mergeGlow.value = mergeGlow;
-      // Also modulate bloom strength slightly with glow
-      bloomPass.strength = 0.55 + mergeGlow * 0.25;
+      // Also modulate bloom strength cleanly
+      bloomPass.strength = 0.3 + (mergeGlow * 0.2) * uiFadeMultiplier;
 
       // ── Per-particle physics ─────────────────────────────────────────────
       for (let i = 0; i < numParticles; i++) {
@@ -218,30 +277,55 @@ export default function MetaballBackground() {
         // ── Mouse attraction (staggered joining) ──
         if (idleTimer < myIdleThreshold && activeTimer >= myJoinThreshold && mouse.x > -9000) {
           // Each particle orbits a unique offset so the merged shape is never circular
-          const orbitR = 60 + (i % 5) * 18;
+          const baseOrbitR = 60 + (i % 5) * 18;
+          const orbitR = isUiHovered ? baseOrbitR * 2.5 : baseOrbitR; // expand orbit to split behind text
           const orbitX = Math.sin(p.phase + t * 1.8) * orbitR;
           const orbitY = Math.cos(p.phase + t * 1.4) * orbitR;
 
-          const dx   = (mouse.x + orbitX) - p.position.x;
-          const dy   = (mouse.y + orbitY) - p.position.y;
+          // Utilize lerped dragged cursor
+          const dx   = (lerpedMouse.x + orbitX) - p.position.x;
+          const dy   = (lerpedMouse.y + orbitY) - p.position.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 450 && dist > 8) {
-            const force = ((450 - dist) / 450) * 4.5 * safeDt;
+          
+          // ── Explosive Scatter Impulse (Billiard Break!) ──
+          // Attraction is ALWAYS normal (3.5) so it stays perfectly normal on screen!
+          // BUT we inject a massive negative force multiplied by our decaying impulse
+          // so it violently explodes the exact millisecond you touch the text!
+          const currentPullRadius = 450;
+          const currentForceMult  = 3.5;
+          
+          if (dist < currentPullRadius && dist > 8) {
+            let force = ((currentPullRadius - dist) / currentPullRadius) * currentForceMult * safeDt;
+            // Inject kinetic shockwave
+            force -= explosionImpulse * 35.0 * safeDt;
+            
             p.velocity.x += dx * force;
             p.velocity.y += dy * force;
           }
         }
 
-        // ── Idle scatter (staggered, amoeba-slow) ──
-        if (idleTimer >= myIdleThreshold) {
-          const breakMult = Math.min((idleTimer - myIdleThreshold) * 0.12, 1.0);
+        // ── Particle-to-Particle Repulsion (Splitting & Idle Scatter) ──
+        let doRepel = idleTimer >= myIdleThreshold;
+        let repelStrength = 0.012;
+        let repelDist = 180;
+        let breakMult = doRepel ? Math.min((idleTimer - myIdleThreshold) * 0.12, 1.0) : 0.0;
+
+        // When hovered on UI, we FORCE explicit splitting so they never merge into a big blob
+        if (isUiHovered) {
+          doRepel = true;
+          repelStrength = 0.45; // Very strong repulsion to instantly shatter big blobs
+          repelDist = 200;      // Ensure they stay apart
+          breakMult = 1.0; 
+        }
+
+        if (doRepel) {
           for (let j = 0; j < numParticles; j++) {
             if (i === j) continue;
             const other = particles[j];
             const dist  = p.position.distanceTo(other.position);
-            if (dist < 180 && dist > 0) {
+            if (dist < repelDist && dist > 0) {
               const repel = p.position.clone().sub(other.position).normalize();
-              repel.multiplyScalar((180 - dist) * 0.012 * breakMult * safeDt);
+              repel.multiplyScalar((repelDist - dist) * repelStrength * breakMult * safeDt);
               p.velocity.add(repel);
             }
           }
@@ -279,13 +363,20 @@ export default function MetaballBackground() {
         );
       }
 
-      composer.render();
+      if (theme === 'light') {
+        // Bypass UnrealBloomPass in Light Mode to preserve absolute alpha transparency 
+        // over the #f8fafc CSS background without post-processing gray artifacts.
+        renderer.render(scene, camera);
+      } else {
+        composer.render();
+      }
     };
 
     animate();
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('ui-hover-focus', onUiHover);
       window.removeEventListener('resize',    onResize);
       cancelAnimationFrame(animationFrameId);
       geometry.dispose();
@@ -295,7 +386,7 @@ export default function MetaballBackground() {
         container.removeChild(renderer.domElement);
       }
     };
-  }, []);
+  }, [theme]);
 
   return (
     <div
@@ -308,7 +399,9 @@ export default function MetaballBackground() {
         height        : '100%',
         zIndex        : -1,
         pointerEvents : 'none',
-        background    : '#080a14'   // deep dark navy — complements the palette
+        background    : theme === 'light' ? '#f8fafc' : '#05060A',   // deeply dark black-navy baseline or light soft slate
+        filter        : 'blur(8px) contrast(0.95)', // Gentle depth blur, not overbearing
+        transform     : 'scale(1.05)' // Prevent minor blur edge clipping
       }}
     />
   );

@@ -22,6 +22,20 @@
   
   --success: #10B981;
   --error: #EF4444;
+  /* Spotlight & Interactive Text Theme Tokens (Light Mode Base) */
+  --glow-text: var(--accent-hover);
+  --glow-shadow-1: rgba(99, 102, 241, 0.8);
+  --glow-shadow-2: rgba(236, 72, 153, 0.6);
+  --glow-shadow-3: rgba(56, 189, 248, 0.5);
+  
+  --feature-hover-border: rgba(99, 102, 241, 0.4);
+  --feature-hover-glow-1: rgba(99, 102, 241, 0.15);
+  --feature-hover-glow-2: rgba(56, 189, 248, 0.08);
+
+  --spot-dim-layer: rgba(255, 255, 255, 0.65);
+  --spot-dim-layer-inner: rgba(255, 255, 255, 0.25);
+  --spot-highlight-1: rgba(99, 102, 241, 0.1);
+  --spot-highlight-2: rgba(99, 102, 241, 0.03);
 }
 
 [data-theme='dark'] {
@@ -43,6 +57,21 @@
   --orb-2: rgba(236, 72, 153, 0.15);
   --orb-3: rgba(56, 189, 248, 0.12);
   --orb-4: rgba(16, 185, 129, 0.08);
+
+  /* Spotlight & Interactive Text Theme Tokens (Dark Mode) */
+  --glow-text: #ffffff;
+  --glow-shadow-1: rgba(255, 255, 255, 1);
+  --glow-shadow-2: rgba(160, 100, 255, 0.9);
+  --glow-shadow-3: rgba(100, 140, 255, 0.8);
+  
+  --feature-hover-border: rgba(160, 100, 255, 0.5);
+  --feature-hover-glow-1: rgba(160, 100, 255, 0.2);
+  --feature-hover-glow-2: rgba(100, 140, 255, 0.1);
+
+  --spot-dim-layer: rgba(0, 0, 0, 0.45);
+  --spot-dim-layer-inner: rgba(0, 0, 0, 0.15);
+  --spot-highlight-1: rgba(255, 255, 255, 0.08);
+  --spot-highlight-2: rgba(255, 255, 255, 0.02);
 }
 
 * {

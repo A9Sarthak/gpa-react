@@ -26,10 +26,74 @@
 }
 
 .hero-title {
+  /* margin-bottom remains, but actual text styles move to base/glow if needed,
+     though keeping font-size/line-height/color here lets them inherit nicely! */
   font-size: 56px;
   line-height: 1.1;
   margin-bottom: 24px;
-  color: var(--text-main);
+}
+
+/* ── Interactive Text Glow Physics ── */
+.interactive-text-container {
+  display: grid;
+  grid-template-areas: "overlap";
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  transform-origin: center center;
+}
+
+.interactive-text-container:hover {
+  transform: scale(1.04);
+}
+
+.interactive-text-base {
+  grid-area: overlap;
+  opacity: 1; /* Keep text perfectly normal and fully visible when NOT hovered */
+  transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1), text-shadow 0.4s ease;
+}
+
+.interactive-text-container:hover .interactive-text-base {
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.interactive-text-glow {
+  grid-area: overlap;
+  pointer-events: none;
+  
+  /* Premium glow effect linked to theme variables */
+  color: var(--glow-text);
+  text-shadow: 0 0 12px var(--glow-shadow-1),
+               0 0 30px var(--glow-shadow-2),
+               0 0 55px var(--glow-shadow-3);
+
+  /* Add extra saturation so the gradient spans pop massively */
+  filter: saturate(2.0) brightness(1.4);
+  -webkit-filter: saturate(2.0) brightness(1.4);
+
+  /* Flashlight mask attached to cursor --x and --y */
+  mask-image: radial-gradient(
+    180px circle at var(--x, -9999px) var(--y, -9999px),
+    black 0%,
+    rgba(0, 0, 0, 0.6) 35%,
+    transparent 100%
+  );
+  -webkit-mask-image: radial-gradient(
+    180px circle at var(--x, -9999px) var(--y, -9999px),
+    black 0%,
+    rgba(0, 0, 0, 0.6) 35%,
+    transparent 100%
+  );
+  
+  /* Physical Zoom: scale up the glowing layer radiating exactly from the cursor */
+  transform: scale(1.02);
+  transform-origin: var(--x, 50%) var(--y, 50%);
+
+  opacity: var(--spot-op, 0);
+  transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1), transform 0.2s ease-out;
+  z-index: 2;
 }
 
 .hero-subtitle {
@@ -56,12 +120,14 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  transition: transform 0.3s ease;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
 .feature-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: var(--feature-hover-border);
+  box-shadow: 0 0 35px var(--feature-hover-glow-1), 
+              0 0 15px var(--feature-hover-glow-2);
+  z-index: 10;
 }
 
 .feature-icon {

@@ -7,25 +7,79 @@ import './Spotlight.css';
  */
 export function SpotlightCard({ children, className = '', style = {}, ...rest }) {
   const ref = useRef(null);
+  const frameId = useRef(null);
+  const target = useRef({ rx: 0, ry: 0, scale: 1 });
+  const current = useRef({ rx: 0, ry: 0, scale: 1 });
+
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  const tick = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    current.current.rx = lerp(current.current.rx, target.current.rx, 0.12);
+    current.current.ry = lerp(current.current.ry, target.current.ry, 0.12);
+    current.current.scale = lerp(current.current.scale, target.current.scale, 0.12);
+
+    el.style.transform = `perspective(1000px) rotateX(${current.current.rx}deg) rotateY(${current.current.ry}deg) scale(${current.current.scale})`;
+
+    if (
+      Math.abs(current.current.rx - target.current.rx) > 0.01 ||
+      Math.abs(current.current.ry - target.current.ry) > 0.01 ||
+      Math.abs(current.current.scale - target.current.scale) > 0.005
+    ) {
+      frameId.current = requestAnimationFrame(tick);
+    }
+  }, []);
 
   const onMove = useCallback((e) => {
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
+    
+    // Core spotlight vars
     el.style.setProperty('--x', `${e.clientX - rect.left}px`);
     el.style.setProperty('--y', `${e.clientY - rect.top}px`);
     el.style.setProperty('--spot-op', '1');
-  }, []);
+
+    // Premium 3D Magnetic tilt dynamics
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const xPercent = (e.clientX - cx) / (rect.width / 2);
+    const yPercent = -(e.clientY - cy) / (rect.height / 2); // invert Y for standard CSS 3D
+    
+    target.current.ry = xPercent * 4.5;
+    target.current.rx = yPercent * 4.5;
+    target.current.scale = 1.04;
+
+    cancelAnimationFrame(frameId.current);
+    frameId.current = requestAnimationFrame(tick);
+
+    // Communicate to background WebGL
+    window.dispatchEvent(new CustomEvent('ui-hover-focus', { detail: { active: true } }));
+  }, [tick]);
 
   const onLeave = useCallback(() => {
-    ref.current?.style.setProperty('--spot-op', '0');
+    const el = ref.current;
+    if (el) el.style.setProperty('--spot-op', '0');
+    
+    // Smooth reset
+    target.current = { rx: 0, ry: 0, scale: 1 };
+    cancelAnimationFrame(frameId.current);
+    frameId.current = requestAnimationFrame(tick);
+
+    window.dispatchEvent(new CustomEvent('ui-hover-focus', { detail: { active: false } }));
+  }, [tick]);
+
+  React.useEffect(() => {
+    return () => cancelAnimationFrame(frameId.current);
   }, []);
 
   return (
     <div
       ref={ref}
       className={`spotlight-card ${className}`}
-      style={style}
+      style={{ ...style, willChange: 'transform' }}
       onPointerMove={onMove}
       onPointerLeave={onLeave}
       {...rest}
@@ -49,8 +103,8 @@ export function MagneticButton({
 }) {
   const ref     = useRef(null);
   const frameId = useRef(null);
-  const target  = useRef({ x: 0, y: 0 });
-  const current = useRef({ x: 0, y: 0 });
+  const target  = useRef({ x: 0, y: 0, scale: 1 });
+  const current = useRef({ x: 0, y: 0, scale: 1 });
 
   const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -60,13 +114,15 @@ export function MagneticButton({
 
     current.current.x = lerp(current.current.x, target.current.x, 0.12);
     current.current.y = lerp(current.current.y, target.current.y, 0.12);
+    current.current.scale = lerp(current.current.scale, target.current.scale, 0.18); // snappier scale
 
-    el.style.transform = `translate(${current.current.x}px, ${current.current.y}px)`;
+    el.style.transform = `translate(${current.current.x}px, ${current.current.y}px) scale(${current.current.scale})`;
 
     // Keep looping while still displaced
     if (
       Math.abs(current.current.x - target.current.x) > 0.05 ||
-      Math.abs(current.current.y - target.current.y) > 0.05
+      Math.abs(current.current.y - target.current.y) > 0.05 ||
+      Math.abs(current.current.scale - target.current.scale) > 0.005
     ) {
       frameId.current = requestAnimationFrame(tick);
     }
@@ -93,14 +149,35 @@ export function MagneticButton({
 
     cancelAnimationFrame(frameId.current);
     frameId.current = requestAnimationFrame(tick);
+    
+    // Connect to global WebGL attraction
+    window.dispatchEvent(new CustomEvent('ui-hover-focus', { detail: { active: true } }));
   }, [strength, maxShift, tick]);
 
   const onLeave = useCallback(() => {
     ref.current?.style.setProperty('--spot-op', '0');
-    target.current = { x: 0, y: 0 };
+    target.current = { x: 0, y: 0, scale: 1 };
+    cancelAnimationFrame(frameId.current);
+    frameId.current = requestAnimationFrame(tick);
+    
+    window.dispatchEvent(new CustomEvent('ui-hover-focus', { detail: { active: false } }));
+  }, [tick]);
+
+  const onDown = useCallback(() => {
+    target.current.scale = 0.95;
     cancelAnimationFrame(frameId.current);
     frameId.current = requestAnimationFrame(tick);
   }, [tick]);
+
+  const onUp = useCallback(() => {
+    target.current.scale = 1;
+    cancelAnimationFrame(frameId.current);
+    frameId.current = requestAnimationFrame(tick);
+  }, [tick]);
+
+  React.useEffect(() => {
+    return () => cancelAnimationFrame(frameId.current);
+  }, []);
 
   return (
     <button
@@ -109,6 +186,8 @@ export function MagneticButton({
       style={style}
       onPointerMove={onMove}
       onPointerLeave={onLeave}
+      onPointerDown={onDown}
+      onPointerUp={onUp}
       {...rest}
     >
       {children}

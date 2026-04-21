@@ -93,8 +93,21 @@
   gap: 8px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .hide-mobile {
     display: none;
+  }
+  .global-navbar {
+    padding: 12px 0;
+  }
+  .navbar-container {
+    padding: 0 16px;
+  }
+  .auth-actions-logged-in {
+    padding-left: 12px;
+    gap: 12px;
+  }
+  .brand-text {
+    font-size: 20px;
   }
 }

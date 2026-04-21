@@ -7,6 +7,14 @@ export default function TargetCalculator({ initialData, onChange }) {
   const [currentCGPA, setCurrentCGPA] = useState(initialData?.currentCGPA || '');
   const [targetCGPA, setTargetCGPA] = useState(initialData?.targetCGPA || '');
   const [nextSemCredits, setNextSemCredits] = useState(initialData?.nextSemCredits || '');
+  
+  const [isCompact, setIsCompact] = useState(false);
+  
+  React.useEffect(() => {
+    const handleScroll = () => setIsCompact(window.scrollY > 120);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   React.useEffect(() => {
     if (onChange) {
@@ -47,8 +55,8 @@ export default function TargetCalculator({ initialData, onChange }) {
 
   return (
     <div className="calculator-container animate-fade-in">
-      <div className="cgpa-display glass-panel" style={{ display: 'flex', alignItems: 'center', padding: '32px 40px', position: 'relative', overflow: 'hidden' }}>
-        <Target className="watermark-icon" size={120} style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.05 }} />
+      <div className={`cgpa-display glass-panel ${isCompact ? 'is-compact' : ''}`} style={{ position: 'relative', overflow: 'hidden' }}>
+        <Target className="display-icon" size={120} style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.05 }} />
         
         <div style={{ flex: 1, zIndex: 1 }}>
           <h3 style={{ fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>

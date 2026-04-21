@@ -114,6 +114,14 @@
 }
 
 /* Slightly increase border contrast on hover smoothly */
-.magnetic-btn:hover {
-  border-color: var(--feature-hover-border) !important;
+@media (hover: hover) and (pointer: fine) {
+  .magnetic-btn:hover {
+    border-color: var(--feature-hover-border) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .magnetic-btn {
+    transform: none !important; /* Disable JS transform on mobile */
+  }
 }

@@ -8,6 +8,14 @@ export default function OverallCalculator({ initialData, onChange }) {
     initialData?.semesters || [{ id: crypto.randomUUID(), name: 'Sem 1', credits: 20, gpa: 9.0, isIncluded: true }]
   );
 
+  const [isCompact, setIsCompact] = useState(false);
+  
+  useEffect(() => {
+    const handleScroll = () => setIsCompact(window.scrollY > 120);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const computeStats = () => {
     let totalCredits = 0;
     let totalWeightedPoints = 0;
@@ -49,13 +57,13 @@ export default function OverallCalculator({ initialData, onChange }) {
 
   return (
     <div className="calculator-container animate-fade-in">
-      <div className="cgpa-display glass-panel" style={{ display: 'flex', alignItems: 'center', padding: '32px 40px' }}>
+      <div className={`cgpa-display glass-panel ${isCompact ? 'is-compact' : ''}`}>
         <div className="display-content" style={{ flex: 1 }}>
           <h3 style={{ fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Overall Cumulative CGPA</h3>
           <div className="cgpa-value smooth-gradient-text" style={{ fontSize: '56px', fontWeight: '800', lineHeight: 1 }}>{currentOverallCgpa}</div>
         </div>
 
-        <div style={{ width: '1px', height: '80px', background: 'var(--border-color)', margin: '0 40px' }}></div>
+        <div className="divider" style={{ width: '1px', height: '80px', background: 'var(--border-color)', margin: '0 40px' }}></div>
 
         <div className="display-content" style={{ flex: 1 }}>
           <h3 style={{ fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Total Credits</h3>

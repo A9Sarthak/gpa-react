@@ -97,6 +97,7 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @keyframes dynamicMesh {
@@ -141,12 +142,14 @@ button {
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease;
 }
 
-.glass-panel:hover {
-  transform: translateY(-4px);
-  box-shadow: 
-    0 10px 15px -3px rgba(0, 0, 0, 0.06),
-    0 20px 25px -5px rgba(0, 0, 0, 0.05),
-    0 30px 60px -15px rgba(0, 0, 0, 0.06);
+@media (hover: hover) and (pointer: fine) {
+  .glass-panel:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+      0 10px 15px -3px rgba(0, 0, 0, 0.06),
+      0 20px 25px -5px rgba(0, 0, 0, 0.05),
+      0 30px 60px -15px rgba(0, 0, 0, 0.06);
+  }
 }
 
 /* Enhanced Inputs */
@@ -199,14 +202,21 @@ button {
   transition: all 0.5s ease;
 }
 
-.btn-primary:hover::after {
-  left: 200%;
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover::after {
+    left: 200%;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -8px var(--accent-color);
+  }
 }
 
-.btn-primary:hover {
-  background-color: var(--accent-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px -8px var(--accent-color);
+.btn-primary:active {
+  transform: scale(0.96);
+  box-shadow: 0 4px 10px -4px var(--accent-color);
 }
 
 .btn-secondary {
@@ -220,11 +230,19 @@ button {
   transition: all 0.3s ease;
 }
 
-.btn-secondary:hover {
+@media (hover: hover) and (pointer: fine) {
+  .btn-secondary:hover {
+    background-color: var(--text-main);
+    color: var(--bg-main);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px rgba(0,0,0,0.15);
+  }
+}
+
+.btn-secondary:active {
+  transform: scale(0.96);
   background-color: var(--text-main);
   color: var(--bg-main);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px -10px rgba(0,0,0,0.15);
 }
 
 /* Smooth Gradient Text */

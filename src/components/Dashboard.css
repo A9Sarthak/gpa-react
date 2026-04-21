@@ -116,26 +116,42 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 900px) {
-  .dashboard-nav {
+@media (max-width: 768px) {
+  .dashboard-subnav {
     flex-direction: column;
-    gap: 20px;
-    padding: 20px;
-    margin: 10px;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 0 0 16px 16px;
   }
   
   .nav-tabs {
     width: 100%;
-    justify-content: center;
+    overflow-x: auto;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Hide scrollbar for cleaner look */
+  }
+
+  .nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-tab {
+    white-space: nowrap;
+    padding: 10px 16px;
+    font-size: 14px;
   }
   
   .nav-actions {
     width: 100%;
-    justify-content: space-between;
+    justify-content: center;
   }
   
-  .user-profile {
-    border-right: none;
-    padding-right: 0;
+  .btn-save {
+    width: 100%;
+  }
+
+  .dashboard-content {
+    padding: 0 16px 30px;
   }
 }

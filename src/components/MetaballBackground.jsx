@@ -14,6 +14,10 @@ export default function MetaballBackground() {
     let width  = window.innerWidth;
     let height = window.innerHeight;
 
+    // Disable heavy WebGL completely on mobile to save battery.
+    // Falls back to smooth CSS background defined in index.css
+    if (width <= 768) return;
+
     const container = mountRef.current;
     const scene     = new THREE.Scene();
 

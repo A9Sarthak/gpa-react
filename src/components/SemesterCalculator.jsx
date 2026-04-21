@@ -284,7 +284,7 @@ export default function SemesterCalculator({ initialData, overallData, onChange,
         </div>
       </div>
 
-      <div className={`cgpa-display glass-panel ${isCompact ? 'is-compact' : ''}`} style={{ display: 'flex', alignItems: 'center' }}>
+      <div className={`cgpa-display glass-panel ${isCompact ? 'is-compact' : ''}`}>
         <div className="display-content" style={{ flex: 1 }}>
           <h3 style={{ fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Semester GPA</h3>
           <div className="cgpa-value smooth-gradient-text" style={{ fontSize: '56px', fontWeight: '800', lineHeight: 1 }}>{currentCgpa}</div>

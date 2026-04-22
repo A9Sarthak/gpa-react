@@ -12,9 +12,12 @@ import MetaballBackground from './components/MetaballBackground';
 
 // Layout wrapper to easily include Navbar and global background on all pages
 const AppLayout = () => {
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
+
   return (
     <>
-      <MetaballBackground />
+      {isLandingPage && <MetaballBackground />}
       <Navbar />
       <Routes>
         <Route path="/" element={<LandingPage />} />

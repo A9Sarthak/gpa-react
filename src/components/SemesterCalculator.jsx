@@ -26,7 +26,13 @@ export default function SemesterCalculator({ initialData, overallData, onChange,
   const [isCompact, setIsCompact] = useState(false);
   
   useEffect(() => {
-    const handleScroll = () => setIsCompact(window.scrollY > 120);
+    const handleScroll = () => {
+      setIsCompact(prev => {
+        if (window.scrollY > 120) return true;
+        if (window.scrollY < 40) return false;
+        return prev;
+      });
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);

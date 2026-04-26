@@ -28,7 +28,7 @@ export default function MetaballBackground() {
     );
     camera.position.z = 1;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     container.appendChild(renderer.domElement);
@@ -164,6 +164,18 @@ export default function MetaballBackground() {
     const bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height), 0.05, 0.8);
     bloomPass.threshold = 0.50;
     composer.addPass(bloomPass);
+
+    // ─── Intersection Observer for Smart Pausing ──────────────────────────────
+    let isVisible = true;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        isVisible = entry.isIntersecting;
+      });
+    }, { threshold: 0 });
+    
+    if (container) {
+      observer.observe(container);
+    }
 
     // ─── Interaction state ────────────────────────────────────────────────────
     const mouse       = new THREE.Vector2(-9999, -9999);
@@ -367,12 +379,14 @@ export default function MetaballBackground() {
         );
       }
 
-      if (theme === 'light') {
-        // Bypass UnrealBloomPass in Light Mode to preserve absolute alpha transparency 
-        // over the #f8fafc CSS background without post-processing gray artifacts.
-        renderer.render(scene, camera);
-      } else {
-        composer.render();
+      if (isVisible) {
+        if (theme === 'light') {
+          // Bypass UnrealBloomPass in Light Mode to preserve absolute alpha transparency 
+          // over the #f8fafc CSS background without post-processing gray artifacts.
+          renderer.render(scene, camera);
+        } else {
+          composer.render();
+        }
       }
     };
 
@@ -382,6 +396,7 @@ export default function MetaballBackground() {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('ui-hover-focus', onUiHover);
       window.removeEventListener('resize',    onResize);
+      observer.disconnect();
       cancelAnimationFrame(animationFrameId);
       geometry.dispose();
       material.dispose();

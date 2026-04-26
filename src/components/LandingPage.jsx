@@ -62,7 +62,7 @@ export default function LandingPage() {
               {isRealUser ? (
                 <>Welcome back, <br /><span className="smooth-gradient-text">{currentUser} 👋</span></>
               ) : (
-                <>The Modern Way to Track Your <br /><span className="smooth-gradient-text">Academic Progress</span></>
+                <>Welcome to Gradevity <br /><span className="smooth-gradient-text">Your Smart Academic Tracker</span></>
               )}
             </h1>
             <p className="hero-subtitle">
